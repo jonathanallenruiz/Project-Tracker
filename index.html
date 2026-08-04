@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Jira-style project tracker populated from the Friendswood GENCO project workbook." />
+  <title>ProjectFlow | Friendswood GENCO Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">PF</div>
+        <div>
+          <strong>ProjectFlow</strong>
+          <span>Delivery workspace</span>
+        </div>
+      </div>
+
+      <div class="project-switcher">
+        <span class="eyebrow">Current project</span>
+        <button class="project-button" type="button">
+          <span class="project-avatar">FG</span>
+          <span>
+            <strong>Friendswood GENCO</strong>
+            <small>Shell · ERCOT</small>
+          </span>
+          <span class="chevron">⌄</span>
+        </button>
+      </div>
+
+      <nav class="nav-list" aria-label="Primary navigation">
+        <button class="nav-item active" data-view="board" type="button">
+          <span class="nav-icon">▦</span><span>Board</span>
+        </button>
+        <button class="nav-item" data-view="list" type="button">
+          <span class="nav-icon">☷</span><span>Issue list</span>
+        </button>
+        <button class="nav-item" data-view="dashboard" type="button">
+          <span class="nav-icon">◫</span><span>Dashboard</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-section">
+        <span class="eyebrow">Project details</span>
+        <dl class="mini-details">
+          <div><dt>Client</dt><dd>Shell</dd></div>
+          <div><dt>Region</dt><dd>ERCOT</dd></div>
+          <div><dt>Technology</dt><dd>Gas</dd></div>
+          <div><dt>BQE #</dt><dd>400782</dd></div>
+        </dl>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="resetDataBtn" class="text-button" type="button">Reset workbook data</button>
+        <small>Changes are saved in this browser.</small>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-only" id="menuBtn" type="button" aria-label="Open navigation">☰</button>
+          <div class="search-wrap">
+            <span aria-hidden="true">⌕</span>
+            <input id="globalSearch" type="search" placeholder="Search issues, people, notes…" aria-label="Search issues" />
+            <kbd>/</kbd>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="exportBtn" class="secondary-button" type="button">Export CSV</button>
+          <button id="createIssueBtn" class="primary-button" type="button">＋ Create issue</button>
+          <div class="user-avatar" title="Workspace user">JR</div>
+        </div>
+      </header>
+
+      <section class="workspace-header">
+        <div>
+          <div class="breadcrumbs">Projects / Friendswood GENCO Expansion</div>
+          <h1 id="viewTitle">Project board</h1>
+          <p id="viewSubtitle">Track interconnection deliverables, ownership, budgets, and deadlines.</p>
+        </div>
+        <div class="header-actions">
+          <button class="secondary-button" id="clearFiltersBtn" type="button">Clear filters</button>
+          <button class="icon-button" type="button" title="More options">•••</button>
+        </div>
+      </section>
+
+      <section class="filter-bar" aria-label="Issue filters">
+        <label>
+          <span>Assignee</span>
+          <select id="assigneeFilter"><option value="">All assignees</option></select>
+        </label>
+        <label>
+          <span>Status</span>
+          <select id="statusFilter"><option value="">All statuses</option></select>
+        </label>
+        <label>
+          <span>Contract</span>
+          <select id="contractFilter"><option value="">All contracts</option></select>
+        </label>
+        <label>
+          <span>Due</span>
+          <select id="dueFilter">
+            <option value="">Any due date</option>
+            <option value="overdue">Overdue</option>
+            <option value="30">Next 30 days</option>
+            <option value="90">Next 90 days</option>
+            <option value="none">No due date</option>
+          </select>
+        </label>
+        <div class="result-count" id="resultCount">4 issues</div>
+      </section>
+
+      <section id="boardView" class="view-panel active" aria-label="Kanban board">
+        <div class="board" id="board"></div>
+      </section>
+
+      <section id="listView" class="view-panel" aria-label="Issue list">
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Issue</th>
+                  <th>Status</th>
+                  <th>Assignee</th>
+                  <th>Review</th>
+                  <th>Contract</th>
+                  <th>Budget</th>
+                  <th>Internal due</th>
+                  <th>External due</th>
+                </tr>
+              </thead>
+              <tbody id="issueTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="dashboardView" class="view-panel" aria-label="Project dashboard">
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="dashboard-grid">
+          <article class="panel-card">
+            <div class="panel-heading">
+              <div><span class="eyebrow">Portfolio</span><h2>Budget by work item</h2></div>
+            </div>
+            <div id="budgetChart" class="bar-chart"></div>
+          </article>
+          <article class="panel-card">
+            <div class="panel-heading">
+              <div><span class="eyebrow">Schedule</span><h2>Upcoming deadlines</h2></div>
+            </div>
+            <div id="deadlineList" class="deadline-list"></div>
+          </article>
+          <article class="panel-card wide-card">
+            <div class="panel-heading">
+              <div><span class="eyebrow">Workload</span><h2>Assignments and reviews</h2></div>
+            </div>
+            <div id="workloadGrid" class="workload-grid"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="issueModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow" id="modalKey">New issue</span>
+          <h2 id="modalTitle">Create issue</h2>
+        </div>
+        <button class="icon-button" id="closeModalBtn" type="button" aria-label="Close">×</button>
+      </div>
+      <form id="issueForm">
+        <input type="hidden" id="issueId" />
+        <div class="form-grid">
+          <label class="full-width">Issue summary
+            <input id="titleInput" required maxlength="160" placeholder="What needs to be delivered?" />
+          </label>
+          <label class="full-width">Scope / description
+            <textarea id="descriptionInput" rows="3" placeholder="Add context, acceptance criteria, or supporting details"></textarea>
+          </label>
+          <label>Status
+            <select id="statusInput"></select>
+          </label>
+          <label>Priority
+            <select id="priorityInput">
+              <option>Highest</option><option>High</option><option selected>Medium</option><option>Low</option>
+            </select>
+          </label>
+          <label>Assigned to
+            <input id="assigneeInput" placeholder="Name" />
+          </label>
+          <label>Review
+            <input id="reviewerInput" placeholder="Reviewer name" />
+          </label>
+          <label>Manager / Director
+            <input id="managerInput" placeholder="Name" />
+          </label>
+          <label>Project manager
+            <input id="projectManagerInput" placeholder="Name" />
+          </label>
+          <label>Contract type
+            <input id="contractInput" placeholder="Fixed, TM, TM+Cap…" />
+          </label>
+          <label>Budget
+            <input id="budgetInput" type="number" min="0" step="100" />
+          </label>
+          <label>Internal completion
+            <input id="internalDateInput" type="date" />
+          </label>
+          <label>External due date
+            <input id="externalDateInput" type="date" />
+          </label>
+          <label>Line of business
+            <input id="lobInput" />
+          </label>
+          <label>Client
+            <input id="clientInput" />
+          </label>
+          <label>Region
+            <input id="regionInput" />
+          </label>
+          <label>ISO / TSO / Utility
+            <input id="isoInput" />
+          </label>
+          <label>Technology
+            <input id="technologyInput" />
+          </label>
+          <label>Project source
+            <input id="sourceInput" />
+          </label>
+          <label>BQE project #
+            <input id="bqeInput" />
+          </label>
+          <label class="full-width">Notes
+            <textarea id="notesInput" rows="2"></textarea>
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button id="deleteIssueBtn" class="danger-button hidden" type="button">Delete issue</button>
+          <div class="footer-spacer"></div>
+          <button class="secondary-button" id="cancelModalBtn" type="button">Cancel</button>
+          <button class="primary-button" type="submit">Save issue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>

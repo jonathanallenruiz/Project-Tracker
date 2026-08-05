@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Jira-style multi-client project tracker populated from the uploaded project workbook." />
+  <title>ProjectFlow | Client Portfolio Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">PF</div>
+        <div>
+          <strong>ProjectFlow</strong>
+          <span>Delivery workspace</span>
+        </div>
+      </div>
+
+      <div class="project-switcher">
+        <span class="eyebrow">Current workspace</span>
+        <button class="project-button" id="workspaceButton" type="button" aria-haspopup="true" aria-expanded="false">
+          <span class="project-avatar" id="workspaceAvatar">CP</span>
+          <span>
+            <strong id="workspaceName">Client Portfolio</strong>
+            <small id="workspaceDescription">Multi-client delivery workspace</small>
+          </span>
+          <span class="chevron">⌄</span>
+        </button>
+        <div class="workspace-menu hidden" id="workspaceMenu">
+          <div class="workspace-menu-heading">Switch workspace</div>
+          <div id="workspaceList" class="workspace-list"></div>
+          <button id="createWorkspaceMenuBtn" class="workspace-menu-create" type="button">＋ Create workspace</button>
+        </div>
+        <button id="createWorkspaceBtn" class="new-workspace-button" type="button">＋ New workspace</button>
+      </div>
+
+      <nav class="nav-list" aria-label="Primary navigation">
+        <button class="nav-item active" data-view="board" type="button">
+          <span class="nav-icon">▦</span><span>Board</span>
+        </button>
+        <button class="nav-item" data-view="list" type="button">
+          <span class="nav-icon">☷</span><span>Issue list</span>
+        </button>
+        <button class="nav-item" data-view="team" type="button">
+          <span class="nav-icon">♙</span><span>Team workload</span>
+        </button>
+        <button class="nav-item" data-view="documents" type="button">
+          <span class="nav-icon">▤</span><span>Documents & links</span>
+        </button>
+        <button class="nav-item" data-view="dashboard" type="button">
+          <span class="nav-icon">◫</span><span>Dashboard</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-section">
+        <span class="eyebrow" id="sidebarDetailsLabel">Workspace details</span>
+        <dl class="mini-details">
+          <div><dt>Clients</dt><dd id="sidebarClientCount">1</dd></div>
+          <div><dt>Regions</dt><dd id="sidebarRegions">ERCOT</dd></div>
+          <div><dt>Issues</dt><dd id="sidebarIssueCount">4</dd></div>
+          <div><dt>Resources</dt><dd id="sidebarDocumentCount">0</dd></div>
+          <div><dt>Budget</dt><dd id="sidebarBudget">$55,000</dd></div>
+        </dl>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="resetDataBtn" class="text-button" type="button">Reset workspace data</button>
+        <small>Changes are saved in this browser.</small>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-only" id="menuBtn" type="button" aria-label="Open navigation">☰</button>
+          <div class="search-wrap">
+            <span aria-hidden="true">⌕</span>
+            <input id="globalSearch" type="search" placeholder="Search issues, people, notes…" aria-label="Search workspace" />
+            <kbd>/</kbd>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <input id="csvFileInput" type="file" accept=".csv,text/csv" hidden />
+          <button id="importCsvBtn" class="secondary-button" type="button" title="Import projects from a CSV using the same columns as the Excel tracker">⇧ Import CSV</button>
+          <button id="exportBtn" class="secondary-button" type="button">Export CSV</button>
+          <button id="createIssueBtn" class="primary-button" type="button">＋ Create issue</button>
+          <div class="user-avatar" title="Workspace user">JR</div>
+        </div>
+      </header>
+
+      <section class="workspace-header">
+        <div>
+          <div class="breadcrumbs" id="workspaceBreadcrumbs">Projects / Client portfolio</div>
+          <h1 id="viewTitle">Project board</h1>
+          <p id="viewSubtitle">Track client deliverables, ownership, budgets, hours, and deadlines.</p>
+        </div>
+        <div class="header-actions">
+          <button class="secondary-button" id="clearFiltersBtn" type="button">Clear filters</button>
+          <button class="icon-button" type="button" title="More options">•••</button>
+        </div>
+      </section>
+
+      <section class="filter-bar" aria-label="Issue filters">
+        <label>
+          <span>Client</span>
+          <select id="clientFilter"><option value="">All clients</option></select>
+        </label>
+        <label>
+          <span>Assignee</span>
+          <select id="assigneeFilter"><option value="">All assignees</option></select>
+        </label>
+        <label>
+          <span>Status</span>
+          <select id="statusFilter"><option value="">All statuses</option></select>
+        </label>
+        <label>
+          <span>Contract</span>
+          <select id="contractFilter"><option value="">All contracts</option></select>
+        </label>
+        <label>
+          <span>Due</span>
+          <select id="dueFilter">
+            <option value="">Any due date</option>
+            <option value="overdue">Overdue</option>
+            <option value="3">Due within 3 days — red</option>
+            <option value="5">Due within 5 days — orange</option>
+            <option value="10">Due within 10 days — yellow</option>
+            <option value="15">Due within 15 days — green</option>
+            <option value="30">Due within 30 days</option>
+            <option value="90">Due within 90 days</option>
+            <option value="none">No due date</option>
+          </select>
+        </label>
+        <div class="deadline-legend" aria-label="Deadline color legend">
+          <span class="due-red"><i></i>0–3 days</span>
+          <span class="due-orange"><i></i>4–5 days</span>
+          <span class="due-yellow"><i></i>6–10 days</span>
+          <span class="due-green"><i></i>11–15 days</span>
+        </div>
+        <div class="result-count" id="resultCount">4 issues</div>
+      </section>
+
+      <section id="boardView" class="view-panel active" aria-label="Kanban board">
+        <div class="board" id="board"></div>
+      </section>
+
+      <section id="listView" class="view-panel" aria-label="Issue list">
+        <div class="table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Issue</th>
+                  <th>Client</th>
+                  <th>Status</th>
+                  <th>Assignee</th>
+                  <th>Review</th>
+                  <th>Contract</th>
+                  <th>Hours</th>
+                  <th>Budget</th>
+                  <th>Internal due</th>
+                  <th>External due</th>
+                  <th>Links</th>
+                </tr>
+              </thead>
+              <tbody id="issueTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+
+      <section id="teamView" class="view-panel" aria-label="Team workload">
+        <div class="kpi-grid" id="teamKpiGrid"></div>
+        <div class="team-roster" id="teamRoster"></div>
+      </section>
+
+
+      <section id="documentsView" class="view-panel" aria-label="Documents and links library">
+        <div class="document-toolbar panel-card">
+          <div>
+            <span class="eyebrow">Knowledge library</span>
+            <h2>Documents & links</h2>
+            <p>Store procedures, interconnection protocols, templates, report templates, and other reusable references.</p>
+          </div>
+          <div class="document-filter-group">
+            <label>Client
+              <select id="documentClientFilter"><option value="">All clients</option></select>
+            </label>
+            <label>Category
+              <select id="documentCategoryFilter"><option value="">All categories</option></select>
+            </label>
+            <button id="addDocumentBtn" class="primary-button" type="button">＋ Add document or link</button>
+          </div>
+        </div>
+        <div class="document-summary" id="documentSummary"></div>
+        <div class="document-library" id="documentLibrary"></div>
+      </section>
+
+      <section id="dashboardView" class="view-panel" aria-label="Project dashboard">
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="dashboard-grid">
+          <article class="panel-card">
+            <div class="panel-heading">
+              <div><span class="eyebrow">Portfolio</span><h2>Budget by work item</h2></div>
+            </div>
+            <div id="budgetChart" class="bar-chart"></div>
+          </article>
+          <article class="panel-card">
+            <div class="panel-heading">
+              <div><span class="eyebrow">Schedule</span><h2>Upcoming deadlines</h2></div>
+            </div>
+            <div id="deadlineList" class="deadline-list"></div>
+          </article>
+          <article class="panel-card wide-card">
+            <div class="panel-heading">
+              <div><span class="eyebrow">Workload</span><h2>Assignments and reviews</h2></div>
+            </div>
+            <div id="workloadGrid" class="workload-grid"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+
+  <div class="modal-backdrop hidden" id="workspaceModal" role="dialog" aria-modal="true" aria-labelledby="workspaceModalTitle">
+    <div class="modal-card workspace-modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow">Workspace setup</span>
+          <h2 id="workspaceModalTitle">Create workspace</h2>
+        </div>
+        <button class="icon-button" id="closeWorkspaceModalBtn" type="button" aria-label="Close">×</button>
+      </div>
+      <form id="workspaceForm">
+        <div class="form-grid">
+          <label class="full-width">Workspace name
+            <input id="workspaceNameInput" required maxlength="80" placeholder="e.g., ERCOT Interconnection Projects" />
+          </label>
+          <label class="full-width">Description
+            <input id="workspaceDescriptionInput" maxlength="140" placeholder="What this workspace is used for" />
+          </label>
+          <label>Issue key prefix
+            <input id="workspacePrefixInput" maxlength="8" required placeholder="ERCOT" />
+            <small class="field-help">Used for new issue keys, such as ERCOT-1.</small>
+          </label>
+          <label>Default client
+            <input id="workspaceClientInput" placeholder="Optional" />
+          </label>
+          <label>Default region
+            <input id="workspaceRegionInput" placeholder="ERCOT, WECC, MISO…" />
+          </label>
+          <label>Starting content
+            <select id="workspaceContentInput">
+              <option value="blank">Start blank</option>
+              <option value="copy">Copy issues and documents from current workspace</option>
+            </select>
+          </label>
+        </div>
+        <div class="modal-footer">
+          <div class="footer-spacer"></div>
+          <button class="secondary-button" id="cancelWorkspaceModalBtn" type="button">Cancel</button>
+          <button class="primary-button" type="submit">Create workspace</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="issueModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow" id="modalKey">New issue</span>
+          <h2 id="modalTitle">Create issue</h2>
+        </div>
+        <button class="icon-button" id="closeModalBtn" type="button" aria-label="Close">×</button>
+      </div>
+      <form id="issueForm">
+        <input type="hidden" id="issueId" />
+        <div class="form-grid">
+          <label class="full-width">Issue summary
+            <input id="titleInput" required maxlength="160" placeholder="What needs to be delivered?" />
+          </label>
+          <label class="full-width">Scope / description
+            <textarea id="descriptionInput" rows="3" placeholder="Add context, acceptance criteria, or supporting details"></textarea>
+          </label>
+          <label>Status
+            <select id="statusInput"></select>
+          </label>
+          <label>Priority
+            <select id="priorityInput">
+              <option>Highest</option><option>High</option><option selected>Medium</option><option>Low</option>
+            </select>
+          </label>
+          <label>Assigned to
+            <input id="assigneeInput" placeholder="Name" />
+          </label>
+          <label>Review
+            <input id="reviewerInput" placeholder="Reviewer name" />
+          </label>
+          <label>Manager / Director
+            <input id="managerInput" placeholder="Name" />
+          </label>
+          <label>Project manager
+            <input id="projectManagerInput" placeholder="Name" />
+          </label>
+          <label>Contract type
+            <input id="contractInput" placeholder="Fixed, TM, TM+Cap…" />
+          </label>
+          <label>Budget
+            <input id="budgetInput" type="number" min="0" step="100" />
+          </label>
+          <label>Allocated hours
+            <input id="hoursInput" type="number" min="0" step="0.5" placeholder="0" />
+          </label>
+          <label>Internal completion
+            <input id="internalDateInput" type="date" />
+          </label>
+          <label>External due date
+            <input id="externalDateInput" type="date" />
+          </label>
+          <label>Line of business
+            <input id="lobInput" />
+          </label>
+          <label>Client
+            <input id="clientInput" />
+          </label>
+          <label>Region
+            <input id="regionInput" />
+          </label>
+          <label>ISO / TSO / Utility
+            <input id="isoInput" />
+          </label>
+          <label>Technology
+            <input id="technologyInput" />
+          </label>
+          <label>Project source
+            <input id="sourceInput" />
+          </label>
+          <label>BQE project #
+            <input id="bqeInput" />
+          </label>
+          <label class="full-width">T-drive link
+            <input id="tDriveInput" placeholder="T:\Projects\Client\Project or file:///T:/Projects/..." />
+            <small class="field-help">Local-drive links work best when this app is opened from a local file and the T: drive is mapped.</small>
+          </label>
+          <label class="full-width">SharePoint link
+            <input id="sharePointInput" placeholder="https://company.sharepoint.com/..." />
+          </label>
+          <label class="full-width">Notes
+            <textarea id="notesInput" rows="2"></textarea>
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button id="deleteIssueBtn" class="danger-button hidden" type="button">Delete issue</button>
+          <div class="footer-spacer"></div>
+          <button class="secondary-button" id="cancelModalBtn" type="button">Cancel</button>
+          <button class="primary-button" type="submit">Save issue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <div class="modal-backdrop hidden" id="documentModal" role="dialog" aria-modal="true" aria-labelledby="documentModalTitle">
+    <div class="modal-card document-modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow" id="documentModalKey">Library resource</span>
+          <h2 id="documentModalTitle">Add document or link</h2>
+        </div>
+        <button class="icon-button" id="closeDocumentModalBtn" type="button" aria-label="Close">×</button>
+      </div>
+      <form id="documentForm">
+        <input type="hidden" id="documentId" />
+        <div class="form-grid">
+          <label class="full-width">Title
+            <input id="documentTitleInput" required maxlength="180" placeholder="Document or resource name" />
+          </label>
+          <label>Category
+            <select id="documentCategoryInput" required>
+              <option>Procedure</option>
+              <option>Interconnection protocol</option>
+              <option>Template</option>
+              <option>Report template</option>
+              <option>Reference</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>Client
+            <input id="documentClientInput" placeholder="Leave blank for all clients" />
+          </label>
+          <label>Owner / contact
+            <input id="documentOwnerInput" placeholder="Name or team" />
+          </label>
+          <label>Last updated
+            <input id="documentUpdatedInput" type="date" />
+          </label>
+          <label class="full-width">Description
+            <textarea id="documentDescriptionInput" rows="4" placeholder="Explain what this resource contains and when it should be used"></textarea>
+          </label>
+          <label class="full-width">T-drive document or folder path
+            <input id="documentDriveInput" placeholder="T:\Projects\Standards\Procedure.pdf or file:///T:/Projects/..." />
+            <small class="field-help">Local-drive links work best when this app is opened locally and the T: drive is mapped.</small>
+          </label>
+          <label class="full-width">SharePoint or web link
+            <input id="documentWebInput" placeholder="https://company.sharepoint.com/..." />
+          </label>
+          <label class="full-width">Tags
+            <input id="documentTagsInput" placeholder="ERCOT, PSCAD, registration, study report" />
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button id="deleteDocumentBtn" class="danger-button hidden" type="button">Delete resource</button>
+          <div class="footer-spacer"></div>
+          <button class="secondary-button" id="cancelDocumentModalBtn" type="button">Cancel</button>
+          <button class="primary-button" type="submit">Save resource</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
